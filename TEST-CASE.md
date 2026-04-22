@@ -24,10 +24,10 @@ PRD 第 10 章验收汇总，共 21 个验收点 + 2 条 BVA 补充用例。
 
 | 层级 | 数量 | 说明 |
 |------|------|------|
-| L1 核心功能 | 8 | 阻断发布 |
-| L2 重要功能 | 8 | 影响体验 |
+| L1 核心功能 | 8 + 1 补充 | 阻断发布 |
+| L2 重要功能 | 8 + 1 补充 | 影响体验 |
 | L3 边缘功能 | 5 + 2 BVA | 可降级 + 边界值分析 |
-| **合计** | **23** | |
+| **合计** | **25** | |
 
 ### 功能模块覆盖
 
@@ -75,6 +75,7 @@ PRD 第 10 章验收汇总，共 21 个验收点 + 2 条 BVA 补充用例。
 | `preflight-inject-saved-state.js` | 注入已保存状态（用于未保存提醒测试） | L2.8 |
 | `preflight-inject-special-title.js` | 注入含特殊字符的标题 | L3.7 |
 | `preflight-inject-title-100.js` | 注入 100 字符标题 | L3.6 |
+| `preflight-inject-mono-test.js` | 注入等宽对齐测试内容（ABCD.../1234.../WWWW.../iiii...） | L2.3b |
 
 ### 4.2 脚本内容
 
@@ -115,6 +116,12 @@ localStorage.setItem('vla-ntp-content', '特殊字符标题导出测试');
 ```javascript
 localStorage.setItem('vla-ntp-title', 'A'.repeat(100));
 localStorage.setItem('vla-ntp-content', '边界值测试内容');
+```
+
+**preflight-inject-mono-test.js**
+```javascript
+localStorage.setItem('vla-ntp-title', '等宽对齐测试');
+localStorage.setItem('vla-ntp-content', 'ABCDEFGHIJ\n1234567890\nWWWWWWWWWW\niiiiiiiiii');
 ```
 
 ### 4.3 localStorage Key 对照
@@ -362,6 +369,35 @@ localStorage.setItem('vla-ntp-content', '边界值测试内容');
 
 ---
 
+### L1.4b [补充] 端到端保存-恢复（品鉴者要求）
+
+| 项 | 值 |
+|---|---|
+| mosstid | `singer-ntp-v1.0-L1.4b-001` |
+| 关联 AC | AC-01-3, AC-02-3, AC-03-1, AC-03-3 |
+| 设计技术 | PRD 追溯（端到端路径补充） |
+| 数据依赖 | EMPTY |
+| 冲突标记 | ⚠ 与 L1.3 写入同 key，但本用例自含完整保存流程，Pre-flight 已清空 |
+| 前置策略 | 策略一 |
+| fixture | 无 |
+
+**Pre-flight：**
+1. 执行 `preflight-clear.js` 清空 localStorage
+2. 打开部署地址 + 窗口最大化
+
+**任务描述：**
+打开空白页面后，在标题输入框中输入"端到端恢复测试标题"，在内容编辑区输入"端到端恢复测试内容第一行"并回车输入"第二行内容"。然后点击"保存"按钮（带💾图标的蓝色实心按钮），等待出现"保存成功"提示。提示消失后，刷新页面（按 F5 或 Cmd+R）。页面重新加载后，观察标题输入框是否仍显示"端到端恢复测试标题"，内容编辑区是否仍显示"端到端恢复测试内容第一行"和"第二行内容"。仅在当前页面操作，不要导航到其他网址。
+
+**Expected Results（逐条）：**
+1. (AC-03-1) 点击"保存"按钮后，显示绿色成功提示消息"保存成功"
+2. (AC-01-3) 刷新页面后，标题输入框仍显示原始输入的标题"端到端恢复测试标题"
+3. (AC-02-3) 刷新页面后，内容编辑区仍显示原始输入的内容"端到端恢复测试内容第一行"和"第二行内容"
+4. (AC-03-3) 标题和内容在刷新后完整恢复，数据未丢失
+
+**与 L1.4 的区别：** L1.4 通过 Pre-flight 注入 localStorage 验证恢复逻辑；本用例走完整用户操作链路（输入→保存→刷新→验证），覆盖真实保存-恢复端到端路径。
+
+---
+
 ## 7. 测试用例 — L2 重要功能
 
 ---
@@ -439,6 +475,41 @@ localStorage.setItem('vla-ntp-content', '边界值测试内容');
 **Expected Results（逐条）：**
 1. (AC-07-1) 字体下拉菜单显示，至少包含：默认、等宽（Monospace）、衬线（Serif）、无衬线（Sans-serif）
 2. (AC-07-2) 选择一种字体后，编辑区文字立即切换为对应字体
+
+---
+
+### L2.3b [补充] 等宽字体特征验证（品鉴者要求）
+
+| 项 | 值 |
+|---|---|
+| mosstid | `singer-ntp-v1.0-L2.3b-001` |
+| 关联 AC | AC-07-2（强化） |
+| 设计技术 | PRD 追溯（字体特征深度验证） |
+| 数据依赖 | CUSTOM — 需要编辑区有含字母和数字的内容 |
+| 冲突标记 | 无 |
+| 前置策略 | 策略二 |
+| fixture | `preflight-clear.js` + `preflight-inject-mono-test.js` |
+
+**Pre-flight：**
+1. 执行 `preflight-clear.js` 清空 localStorage
+2. 执行 `preflight-inject-mono-test.js` 注入等宽对齐测试内容
+3. 打开部署地址 + 窗口最大化
+
+**任务描述：**
+页面加载后，编辑区已预填如下内容（用于验证等宽对齐）：
+```
+ABCDEFGHIJ
+1234567890
+WWWWWWWWWW
+iiiiiiiiii
+```
+找到工具栏中"字体"标签旁的下拉菜单，选择"等宽"。观察编辑区中上述四行文字是否每行等宽对齐——即每行的字符宽度一致，"W"和"i"所占的水平宽度相同，四行文字的右边缘应大致对齐。仅在当前页面操作，不要导航到其他网址。
+
+**Expected Results（逐条）：**
+1. (AC-07-2 强化) 选择"等宽"字体后，编辑区文字切换为等宽字体
+2. (AC-07-2 强化) 字母"W"和字母"i"所占水平宽度相同，四行文字（ABCDEFGHIJ / 1234567890 / WWWWWWWWWW / iiiiiiiiii）的右边缘大致对齐，确认等宽特征生效
+
+**与 L2.3 的区别：** L2.3 验证字体切换是否生效（有无变化）；本用例验证等宽字体的实际视觉特征（字母/数字是否等宽对齐）。
 
 ---
 
@@ -797,8 +868,8 @@ reports/singer-ntp/logs/2026-04-XX/singer-ntp-<测试点ID>.log
 
 - [x] 文档信息
 - [x] 测试范围
-- [x] 测试用例 L1（8 项）
-- [x] 测试用例 L2（8 项）
+- [x] 测试用例 L1（8 项 + 1 补充）
+- [x] 测试用例 L2（8 项 + 1 补充）
 - [x] 测试用例 L3（5 项 + 2 BVA）
 - [x] Fixture 清单（7 个 Pre-flight 脚本 + 内容）
 - [x] 测试环境

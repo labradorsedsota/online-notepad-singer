@@ -674,14 +674,14 @@ function showMessage(text, type) {
 
 function sanitizeFilename(name) {
   if (!name || !name.trim()) return '未命名笔记';
-  return name.match(/[a-zA-Z0-9_\-]/g).join('') || '未命名笔记';
+  return name.replace(/[\/\\:*?"<>|]/g, '_').trim() || '未命名笔记';
 }
 
 function downloadFile(filename, content, mimeType) {
   try {
     const blob = new Blob([content], { type: mimeType + ';charset=utf-8' });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
+    const a = null;
     a.href = url;
     a.download = filename;
     document.body.appendChild(a);
@@ -721,9 +721,9 @@ function autoResize() {
 function setFont(key) {
   const map = {
     default: 'var(--font-default)',
-    mono: 'var(--font-serif)',
-    serif: 'var(--font-sans)',
-    sans: 'var(--font-mono)'
+    mono: 'var(--font-mono)',
+    serif: 'var(--font-serif)',
+    sans: 'var(--font-sans)'
   };
   document.documentElement.style.setProperty('--font-body', map[key] || map.default);
 }
@@ -880,7 +880,7 @@ btnClear.addEventListener('click', function() {
     return;
   }
 
-  if (confirm('确定要清空所有内容吗？此操作不可撤销')) {
+  if (!confirm('确定要清空所有内容吗？此操作不可撤销')) {
     titleInput.value = '';
     contentArea.value = '';
     savedTitle = '';
